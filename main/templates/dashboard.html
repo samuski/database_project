@@ -32,34 +32,41 @@
     <button name="canned_query" value="common_crime" class="btn btn-secondary">
         Most Common Crimes
     </button>
-    <button name="canned_query" value="high_arrest" class="btn btn-secondary">
-        Highest Arrest Area
-    </button>
     <button name="canned_query" value="peak_hours" class="btn btn-secondary">
         Peak Crime Hours
     </button>
     <button name="canned_query" value="peak_days" class="btn btn-secondary">
         Peak Crime Days
     </button>
-    <button name="canned_query" value="hotspots" class="btn btn-secondary">
-        Crime Hostspots
+    <button name="canned_query" value="hotspots_chicago" class="btn btn-secondary">
+        Crime Hostspots (Chicago)
+    </button>
+    <button name="canned_query" value="hotspots_la" class="btn btn-secondary">
+        Crime Hostspots (Los Angeles)
     </button>
     <button name="canned_query" value="yoy_crime" class="btn btn-secondary">
         Year-over-Year Crime Stats
     </button>
-    <button name="canned_query" value="crime_district" class="btn btn-secondary">
-        Crime Type Distribution by Districts
+    <button name="canned_query" value="crime_distribution_chicago" class="btn btn-secondary">
+        Crime Distribution (Chicago)
+    </button>
+    <button name="canned_query" value="crime_distribution_la" class="btn btn-secondary">
+        Crime Distribution (Los Angeles)
+    </button>
+    <button name="canned_query" value="crime_distribution_premise" class="btn btn-secondary">
+        Crime Distribution by Premise Type
     </button>
     <button name="canned_query" value="crime_season" class="btn btn-secondary">
         Seasonal Crime Pattern
     </button>
-    <button name="canned_query" value="crime_slide" class="btn btn-secondary">
-        Sliding Crime Analysis
+    <button name="canned_query" value="arrest_made_by_crime" class="btn btn-secondary">
+        Arrest Rate by Crime
     </button>
+
 </form>
 
 <!-- Results -->
-{% if results %}
+{% if results and chart_type != "heatmap"%}
 <h4 class="mt-4">Query Results</h4>
 <table class="table table-bordered">
     <thead>
@@ -110,7 +117,42 @@
 </nav>
 {% endif %}
 
-{% if chart_type %}
+{% if chart_type == "heatmap" %}
+<h4 class="mt-4">Crime Heatmap</h4>
+<div id="map" style="height: 1000px;"></div>
+
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=visualization"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let heatmapData = JSON.parse('{{ graph_data|escapejs }}');
+        console.log("Heatmap Data Received:", heatmapData);  // ✅ Debugging
+
+        let centerPoint = heatmapData.length > 0 ? { lat: heatmapData[0].lat, lng: heatmapData[0].lng } : { lat: 41.8781, lng: -87.6298 };  // Default to Chicago
+
+        let map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 12,
+            center: centerPoint,
+            mapTypeId: "satellite",
+        });
+
+        let cityName = heatmapData.length > 0 ? heatmapData[0].city : "Unknown";
+        let radius = cityName === "Chicago" ? 100 : 10;
+
+        let heatmapLayer = new google.maps.visualization.HeatmapLayer({
+            data: heatmapData.map(point => {
+                return {
+                    location: new google.maps.LatLng(point.lat, point.lng)
+                };
+            }),
+            radius: radius,
+            opacity: 0.7
+        });
+
+        heatmapLayer.setMap(map);
+    });
+
+</script>
+{% elif chart_type %}
 <h4 class="mt-4">Graph Visualization</h4>
 <canvas id="queryChart"></canvas>
 
@@ -118,6 +160,7 @@
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         let graphData = JSON.parse('{{ graph_data|escapejs }}');
+        console.log("Graph Data Sent to Chart.js:", graphData);
 
         let allData = [];
         graphData.datasets.forEach(function(dataset) {
@@ -151,6 +194,7 @@
         }
     });
 </script>
+
 {% else %}
 <p>No graph available.</p>  <!-- ✅ Debugging -->
 {% endif %}

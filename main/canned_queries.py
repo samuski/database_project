@@ -22,13 +22,13 @@ def monthly_trends():
     query="""
         SELECT 
             l.city,
-            to_char(date_trunc('month', t.crimetime), 'Month') AS month,
+            EXTRACT(MONTH FROM t.crimetime) AS month,
             COUNT(*) AS crime_count
         FROM crime c
         JOIN location l ON c.locationid = l.locationid
         JOIN timeinfo t ON c.timeid = t.timeid
-        GROUP BY l.city, to_char(date_trunc('month', t.crimetime), 'Month')
-        ORDER BY l.city, month; 
+        GROUP BY l.city, month
+        ORDER BY month, l.city;
     """
     chart_type = "bar"
     return query, chart_type
@@ -39,36 +39,19 @@ def common_crime():
     query="""
         SELECT 
             l.city,
-            ct.crimedesc,
+            cc.categoryname,
             COUNT(*) AS count_crimes
         FROM crime c
         JOIN location l ON c.locationid = l.locationid
         JOIN crimetype ct ON c.crimetypeid = ct.crimetypeid
-        GROUP BY l.city, ct.crimedesc
-        ORDER BY l.city, count_crimes DESC;
+        JOIN crimecategory cc ON ct.categoryid = cc.categoryid
+        GROUP BY l.city, cc.categoryname
+        ORDER BY cc.categoryname, l.city;
     """
     chart_type = "bar"
     return query, chart_type
 
-# 3. Areas with Highest Arrest Rate
-@register_query
-def high_arrest():
-    query="""
-        SELECT 
-            l.city,
-            l.area,
-            SUM(CASE WHEN c.arrestmade THEN 1 ELSE 0 END) AS arrests,
-            COUNT(*) AS total_crimes,
-            ROUND(100.0 * SUM(CASE WHEN c.arrestmade THEN 1 ELSE 0 END) / COUNT(*), 2) AS arrest_rate_percentage
-        FROM crime c
-        JOIN location l ON c.locationid = l.locationid
-        GROUP BY l.city, l.area
-        ORDER BY arrest_rate_percentage DESC;
-    """
-    chart_type = "bar"
-    return query, chart_type
-
-# 4. Peak Hours
+# 3. Peak Hours
 @register_query
 def peak_hours():
     query="""
@@ -83,7 +66,7 @@ def peak_hours():
     chart_type = "bar"
     return query, chart_type
 
-# 5. Peak Days
+# 4. Peak Days
 @register_query
 def peak_days():
     query="""
@@ -92,27 +75,37 @@ def peak_days():
             COUNT(*) AS crime_count
         FROM crime c
         JOIN timeinfo t ON c.timeid = t.timeid
-        GROUP BY day_of_week
-        ORDER BY crime_count DESC;
+        GROUP BY EXTRACT(DOW FROM t.crimetime), day_of_week
+        ORDER BY EXTRACT(DOW FROM t.crimetime);
     """
     chart_type = "bar"
     return query, chart_type
 
-# 6. Geographical Crime Hotspots
+# 5. Geographical Crime Hotspots (Chicago)
 @register_query
-def hotspots():
+def hotspots_chicago():
     query="""
         SELECT 
-            l.latitude,
-            l.longitude,
-            COUNT(*) AS crime_count
-        FROM crime c
-        JOIN location l ON c.locationid = l.locationid
-        GROUP BY l.latitude, l.longitude
-        ORDER BY crime_count DESC
-        LIMIT 50;
+            latitude,
+            longitude
+        FROM location
+        WHERE city = 'Chicago'
     """
-    chart_type = "bar"
+    chart_type = "heatmap"
+    return query, chart_type
+
+# 6. Geographical Crime Hotspots (LA)
+@register_query
+def hotspots_la():
+    query="""
+        SELECT 
+            latitude,
+            longitude
+        FROM location
+        WHERE city = 'LA'
+        GROUP BY latitude, longitude
+    """
+    chart_type = "heatmap"
     return query, chart_type
 
 # 7. Year-over-Year Crime Rate Changes
@@ -138,25 +131,43 @@ def yoy_crime():
     chart_type = "bar"
     return query, chart_type
 
-# 8. Crime Type Distribution by City District
+# 8. Crime Distribution (Chicago)
 @register_query
-def crime_district():
-    query="""
+def crime_distribution_chicago():
+    query = """
         SELECT 
-            l.city,
-            l.area,
             ct.crimedesc,
-            COUNT(*) AS crime_count
+            COUNT(*) AS crime_count,
+            ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER(), 2) AS crime_percentage
         FROM crime c
         JOIN location l ON c.locationid = l.locationid
         JOIN crimetype ct ON c.crimetypeid = ct.crimetypeid
-        GROUP BY l.city, l.area, ct.crimedesc
-        ORDER BY l.city, l.area, crime_count DESC;
+        WHERE l.city = 'Chicago'
+        GROUP BY ct.crimedesc
+        ORDER BY crime_count DESC;
     """
-    chart_type = "bar"
+    chart_type = "pie"
     return query, chart_type
 
-# 9. Seasonal Crime Pattern
+# 9. Crime Distribution (Los Angeles)
+@register_query
+def crime_distribution_la():
+    query = """
+        SELECT 
+            ct.crimedesc,
+            COUNT(*) AS crime_count,
+            ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER(), 2) AS crime_percentage
+        FROM crime c
+        JOIN location l ON c.locationid = l.locationid
+        JOIN crimetype ct ON c.crimetypeid = ct.crimetypeid
+        WHERE l.city = 'LA'
+        GROUP BY ct.crimedesc
+        ORDER BY crime_count DESC;
+    """
+    chart_type = "pie"
+    return query, chart_type
+
+# 10. Seasonal Crime Pattern
 @register_query
 def crime_season():
     query="""
@@ -184,42 +195,29 @@ def crime_season():
             WHEN season = 'Fall' THEN 4
           END;
     """
-    chart_type = "line"
-    return query, chart_type
-
-# 10. Sliding Weekly Pattern by Type 
-@register_query
-def crime_slide():
-    query="""
-        WITH daily_counts AS (
-          SELECT
-            ct.crimedesc,
-            date(t.crimetime) AS crime_date,
-            COUNT(*) AS daily_count
-          FROM crime c
-          JOIN timeinfo t ON c.timeid = t.timeid
-          JOIN crimetype ct ON c.crimetypeid = ct.crimetypeid
-          WHERE t.crimetime >= current_date - interval '1 year'
-          GROUP BY ct.crimedesc, date(t.crimetime)
-        ),
-        moving_stats AS (
-          SELECT
-            crimedesc,
-            crime_date,
-            daily_count,
-            AVG(daily_count) OVER (PARTITION BY crimedesc ORDER BY crime_date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS ma_7,
-            STDDEV(daily_count) OVER (PARTITION BY crimedesc ORDER BY crime_date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS sd_7
-          FROM daily_counts
-        )
-        SELECT
-          crimedesc,
-          crime_date,
-          daily_count,
-          ma_7,
-          sd_7,
-          ROUND((daily_count - ma_7) / NULLIF(sd_7, 0), 2) AS z_score
-        FROM moving_stats
-        ORDER BY crimedesc, crime_date;
-    """
     chart_type = "bar"
     return query, chart_type
+
+# 11. Crime Distribution by Premise Type
+@register_query
+def crime_distribution_premise():
+    query="""
+        SELECT 
+            pt.premisdesc, 
+            COUNT(*) AS crime_count
+        FROM crime c
+        JOIN premisetype pt ON c.premisid = pt.premisid
+        GROUP BY pt.premisdesc
+        ORDER BY crime_count DESC;
+    """
+    chart_type = "pie"
+    return query, chart_type
+
+# 12. 
+# @register_query
+# def ():
+#     query="""
+
+#     """
+#     chart_type = "bar"
+#     return query, chart_type
