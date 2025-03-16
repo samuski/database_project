@@ -12,6 +12,7 @@
 - Unzip the project.
 - Go in to the directory and open a command prompt or powershell.
 - Run `docker-compose up -d --build`
+  - Initial setup of tables will take about 30 seconds.
 - In any browser, go to `localhost:8000`
 - Interact with the dashboard.
 
