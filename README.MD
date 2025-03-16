@@ -9,8 +9,10 @@
 
 ## Setup Instructions
 
+- Unzip the project.
+- Go in to the directory and open a command prompt or powershell.
 - Run `docker-compose up -d --build`
-- In a browser, go to `localhost:8000`
+- In any browser, go to `localhost:8000`
 - Interact with the dashboard.
 
 ## Procedures
