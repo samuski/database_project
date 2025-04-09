@@ -1,5 +1,8 @@
 Django
 psycopg2-binary
 python-dotenv
-# pandas
-# numpy
+
+# DBMS
+pytest
+ply      # For SQL parsing (would need TA approval)
+colorama

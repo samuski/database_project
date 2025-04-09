@@ -1,0 +1,3 @@
+[submodule "dbms"]
+	path = dbms
+	url = git@github.com:wisdomobinna/dbms_project.git

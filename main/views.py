@@ -10,6 +10,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from main.data_files.init_database import table_init
 from main.canned_queries import canned_queries
+from main.custom_dbms_adapter import run_custom_query
 
 load_dotenv()
 
@@ -24,28 +25,48 @@ def is_data_imported():
         count = cursor.fetchone()[0]
     return count > 0
 
+# Uses postgres
+# def execute_query(query, page, pagination):
+#     per_page=30
+#     with connection.cursor() as cursor:
+#         cursor.execute(query)
+#         if cursor.description:
+#             raw_results = cursor.fetchall()
+#             columns = [col[0] for col in cursor.description]
+#         else:
+#             return None, None
+#         if not pagination:
+#             return raw_results, columns
+        
+#         # Paginate the results
+#         paginator = Paginator(raw_results, per_page)
+#         try:
+#             results = paginator.page(page)
+#         except PageNotAnInteger:
+#             results = paginator.page(1)
+#         except EmptyPage:
+#             results = paginator.page(paginator.num_pages)
+#         return results, columns
+
 
 def execute_query(query, page, pagination):
-    per_page=30
-    with connection.cursor() as cursor:
-        cursor.execute(query)
-        if cursor.description:
-            raw_results = cursor.fetchall()
-            columns = [col[0] for col in cursor.description]
-        else:
-            return None, None
-        if not pagination:
-            return raw_results, columns
-        
-        # Paginate the results
-        paginator = Paginator(raw_results, per_page)
-        try:
-            results = paginator.page(page)
-        except PageNotAnInteger:
-            results = paginator.page(1)
-        except EmptyPage:
-            results = paginator.page(paginator.num_pages)
-        return results, columns
+    per_page = 30
+
+    raw_results, columns = run_custom_query(query)
+
+    if not pagination:
+        return raw_results, columns
+
+    paginator = Paginator(raw_results, per_page)
+    try:
+        results = paginator.page(page)
+    except PageNotAnInteger:
+        results = paginator.page(1)
+    except EmptyPage:
+        results = paginator.page(paginator.num_pages)
+
+    return results, columns
+
 
 def graph(results):
     if not results:
