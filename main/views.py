@@ -26,35 +26,6 @@ def is_data_imported():
         return int(rows[0][0]) > 0
     except:
         return False
-    
-    # with connection.cursor() as cursor:
-    #     cursor.execute("SELECT COUNT(*) FROM crime;")
-    #     count = cursor.fetchone()[0]
-    # return count > 0
-
-### Uses postgres
-# def execute_query(query, page, pagination):
-#     per_page=30
-#     with connection.cursor() as cursor:
-#         cursor.execute(query)
-#         if cursor.description:
-#             raw_results = cursor.fetchall()
-#             columns = [col[0] for col in cursor.description]
-#         else:
-#             return None, None
-#         if not pagination:
-#             return raw_results, columns
-        
-#         # Paginate the results
-#         paginator = Paginator(raw_results, per_page)
-#         try:
-#             results = paginator.page(page)
-#         except PageNotAnInteger:
-#             results = paginator.page(1)
-#         except EmptyPage:
-#             results = paginator.page(paginator.num_pages)
-#         return results, columns
-
 
 def execute_query(query, page, pagination):
     per_page = 30
@@ -173,25 +144,14 @@ def dashboard(request):
 
     if request.method == "POST":
         page = 1
-        # New query submitted, clear previous one
         query = request.POST.get("sql_query", "")
-        request.session["last_query"] = query  # Store query in session
 
-        canned_query = request.POST.get("canned_query" "")
-
+        canned_query = request.POST.get("canned_query", "")
         if canned_query and canned_query in canned_queries:
             query, chart_type = canned_queries[canned_query]()
             if chart_type == 'heatmap':
                 pagination = False
-            request.session["last_chart_type"] = chart_type
 
-        if query:
-            request.session["last_query"] = query
-
-    elif "last_query" in request.session:
-        # Preserve query across pagination clicks
-        query = request.session["last_query"]
-        chart_type = request.session.get("last_chart_type", None)
     if query:
         try:
             results, columns, exec_time = execute_query(query, page, pagination)
@@ -208,13 +168,12 @@ def dashboard(request):
                     graph_data = graph(results)
         
             graph_data_json = json.dumps(graph_data, default=lambda o: float(o) if isinstance(o, decimal.Decimal) else o)
-            request.session["graph_data"] = graph_data_json
 
         except Exception as e:
             error_message = str(e)
             results = None
             columns = None
-            exec_time
+            exec_time = None
 
     return render(request, "dashboard.html", {
         "results": results,
