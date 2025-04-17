@@ -19,7 +19,13 @@
     {% csrf_token %}
     <label for="sql_query" class="form-label">Enter SQL Query:</label>
     <textarea name="sql_query" id="sql_query" class="form-control" rows="3">{{ query }}</textarea>
-    <button type="submit" class="btn btn-primary mt-2">Run Query</button>
+    <div class="d-flex align-items-center gap-3 mt-2">
+        <button type="submit" class="btn btn-primary">Run Query</button>
+        {% if exec_time %}
+            <p class="mb-0"><strong>Execution Time:</strong> {{ exec_time|floatformat:6 }} seconds</p>
+        {% endif %}
+    </div>
+    
 </form>
 
 <!-- Predefined Queries -->
