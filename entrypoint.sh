@@ -28,7 +28,7 @@ python manage.py migrate
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
-python manage.py import_csv_files
+# python manage.py import_csv_files
 
 echo "Starting Django server..."
 exec "$@"
