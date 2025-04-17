@@ -20,12 +20,19 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def is_data_imported():
     table_init() # Error proofed with IF NOT EXISTS
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT COUNT(*) FROM crime;")
-        count = cursor.fetchone()[0]
-    return count > 0
 
-# Uses postgres
+    rows, columns, exec_time = run_custom_query("SELECT COUNT(*) FROM crime;")
+    try:
+        return int(rows[0][0]) > 0
+    except:
+        return False
+    
+    # with connection.cursor() as cursor:
+    #     cursor.execute("SELECT COUNT(*) FROM crime;")
+    #     count = cursor.fetchone()[0]
+    # return count > 0
+
+### Uses postgres
 # def execute_query(query, page, pagination):
 #     per_page=30
 #     with connection.cursor() as cursor:
@@ -52,10 +59,14 @@ def is_data_imported():
 def execute_query(query, page, pagination):
     per_page = 30
 
-    raw_results, columns = run_custom_query(query)
+    raw_results, columns, exec_time = run_custom_query(query)
+
+    print(raw_results)
+    print(columns)
+    print(exec_time)
 
     if not pagination:
-        return raw_results, columns
+        return raw_results, columns, exec_time
 
     paginator = Paginator(raw_results, per_page)
     try:
@@ -65,7 +76,7 @@ def execute_query(query, page, pagination):
     except EmptyPage:
         results = paginator.page(paginator.num_pages)
 
-    return results, columns
+    return results, columns, exec_time
 
 
 def graph(results):
@@ -88,7 +99,7 @@ def graph(results):
         }]
     }
 
-def multi_graph(results, columns):
+def multi_graph(results, columns, exec_time):
     if not results:
         return {}
     
@@ -121,7 +132,8 @@ def multi_graph(results, columns):
 
     return {
         "labels": labels, 
-        "datasets": formatted_datasets
+        "datasets": formatted_datasets,
+        "exec_time": exec_time
     }
 
 def heatmap_graph(results):
@@ -154,6 +166,7 @@ def dashboard(request):
     graph_data_json = None
     chart_type = None
     pagination = True
+    exec_time = None
 
     query = request.GET.get("sql_query", "")
     page = request.GET.get("page", 1)
@@ -181,9 +194,11 @@ def dashboard(request):
         chart_type = request.session.get("last_chart_type", None)
     if query:
         try:
-            results, columns = execute_query(query, page, pagination)
+            results, columns, exec_time = execute_query(query, page, pagination)
             if results is None:
                 success_message = "Query executed successfully."
+            elif isinstance(columns, list) and len(columns) == 1 and columns[0].startswith("Error:"):
+                error_message = columns[0]
             elif chart_type:
                 if 'city' in [col.lower() for col in columns]: # Checks for 'city' column
                     graph_data = multi_graph(results, columns)
@@ -199,6 +214,7 @@ def dashboard(request):
             error_message = str(e)
             results = None
             columns = None
+            exec_time
 
     return render(request, "dashboard.html", {
         "results": results,
@@ -208,5 +224,6 @@ def dashboard(request):
         "query": query,
         "graph_data" : graph_data_json,
         "chart_type": chart_type,
-        "google_maps_api_key": os.getenv("GOOGLE_MAPS_API_KEY")
+        "google_maps_api_key": os.getenv("GOOGLE_MAPS_API_KEY"),
+        "exec_time": exec_time
     })
