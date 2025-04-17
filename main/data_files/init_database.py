@@ -1,6 +1,7 @@
 import os
-# import pandas as pd
 from django.db import connection
+
+from main.custom_dbms_adapter import run_custom_query
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -9,14 +10,22 @@ def table_init():
     sql_file_path = os.path.join(BASE_DIR, "create.sql")
     with open(sql_file_path, "r", encoding="utf-8") as file:
         sql_script = file.read()
-    with connection.cursor() as cursor:
-        for statement in sql_script.split(";"):
-            statement = statement.strip()
-            if statement:
-                try:
-                    cursor.execute(statement + ";")
-                except Exception as e:
-                    print(f"Skipping error in SQL execution: {e}")
+    # with connection.cursor() as cursor:
+    #     for statement in sql_script.split(";"):
+    #         statement = statement.strip()
+    #         if statement:
+    #             try:
+    #                 cursor.execute(statement + ";")
+    #             except Exception as e:
+    #                 print(f"Skipping error in SQL execution: {e}")
+
+    for statement in sql_script.split(";"):
+        statement = statement.strip()
+        if statement:
+            try:
+                rows, columns = run_custom_query(statement + ";")
+            except Exception as e:
+                print(f"Skipping error in SQL execution: {e}")
     print("Database tables initialized.")
 
 def create_staging_table():

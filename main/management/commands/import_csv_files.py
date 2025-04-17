@@ -3,23 +3,28 @@ import glob
 from django.db import connection
 from django.core.management.base import BaseCommand
 from main.data_files.init_database import load_tables, table_init
+from main.custom_dbms_adapter import run_custom_query
 
 class Command(BaseCommand):
     help = "Automatically import CSV data into the database if not already imported."
 
     def is_data_imported():
-      with connection.cursor() as cursor:
-          cursor.execute("SELECT COUNT(*) FROM crime;")
-          count = cursor.fetchone()[0]
-      return count > 0
+        rows, columns, _ = run_custom_query("SELECT COUNT(*) FROM crime;")
+    #   with connection.cursor() as cursor:
+    #       cursor.execute("SELECT COUNT(*) FROM crime;")
+    #       count = cursor.fetchone()[0]
+        return int(rows[0][0]) > 0 if rows else False
 
 
     def handle(self, *args, **options):
         table_init() # Error proofed with IF NOT EXISTS
-
-        with connection.cursor() as cursor:
-          cursor.execute("SELECT COUNT(*) FROM crime;")
-          count = cursor.fetchone()[0]
+        count = run_custom_query("SELECT COUNT(*) FROM crime;")
+        rows, columns, _ = run_custom_query("SELECT COUNT(*) FROM crime;")
+        count = int(rows[0][0]) if rows else 0
+        
+        # with connection.cursor() as cursor:
+        #   cursor.execute("SELECT COUNT(*) FROM crime;")
+        #   count = cursor.fetchone()[0]
 
         # Check if data has already been imported by inspecting the crime table.
         if count == 0:
