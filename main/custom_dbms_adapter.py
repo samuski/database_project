@@ -14,19 +14,31 @@ def run_custom_query(sql_query):
     try:
         result, exec_time = _app.run_query(sql_query)
 
-        # Case: error message from run_query
+        # Case 1: Error message
         if isinstance(result, str) and result.startswith("Error:"):
             return [], [result], exec_time
 
-        # Structured result from _format_result()
+        # Case 2: Already structured output
         if isinstance(result, dict) and "columns" in result and "rows" in result:
             return result["rows"], result["columns"], exec_time
+
+        # Case 3: Convert tabular string output
+        if isinstance(result, str) and "\n" in result:
+            lines = result.strip().split("\n")
+            if len(lines) >= 2 and "|" in lines[0]:
+                header = [col.strip() for col in lines[0].split("|")]
+                rows = [tuple(cell.strip() for cell in row.split("|")) for row in lines[2:]]
+                return rows, header, exec_time
+
+        # Case 4: Simple string message
+        if isinstance(result, str):
+            return [(result,)], ["Message"], exec_time
 
         # Fallback
         return [], ["No data returned"], exec_time
 
     except Exception as e:
-        return [], [f"Error: {str(e)}"], 0.0
-
-def copy_from_csv(self, table_name, csv_path, has_header=True):
-    return self.executor.copy_from_csv(table_name, csv_path, has_header)
+        print("🔥 DEBUG ERROR:", type(e), e)
+        import traceback
+        traceback.print_exc()
+        return f"Error: {str(e)}", 0.0
