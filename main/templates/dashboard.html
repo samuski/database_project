@@ -18,7 +18,7 @@
 <form method="POST" class="mb-3">
     {% csrf_token %}
     <label for="sql_query" class="form-label">Enter SQL Query:</label>
-    <textarea name="sql_query" id="sql_query" class="form-control" rows="3">{{ query }}</textarea>
+    <textarea name="sql_query" id="sql_query" class="form-control" rows="5">{{ query }}</textarea>
     <div class="d-flex align-items-center gap-3 mt-2">
         <button type="submit" class="btn btn-primary">Run Query</button>
         {% if exec_time %}
@@ -160,6 +160,20 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // Add keyboard shortcuts for textarea
+    document.addEventListener("DOMContentLoaded", function() {
+        const sqlTextarea = document.getElementById("sql_query");
+        if (sqlTextarea) {
+            sqlTextarea.addEventListener("keydown", function(e) {
+                // Capture Enter without Shift to submit form
+                if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    this.form.submit();
+                }
+            });
+        }
+    });
+
     document.addEventListener("DOMContentLoaded", function () {
         let graphData = JSON.parse('{{ graph_data|escapejs }}');
         console.log("Graph Data Sent to Chart.js:", graphData);
