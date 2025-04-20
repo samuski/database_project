@@ -8,8 +8,8 @@ from django.shortcuts import render
 from django.db import connection
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-from main.data_files.init_database import table_init
-from main.canned_queries import canned_queries
+# from main.data_files.init_database import table_init
+# from main.canned_queries import canned_queries
 from main.custom_dbms_adapter import run_custom_query
 
 load_dotenv()
@@ -19,7 +19,7 @@ GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def is_data_imported():
-    table_init() # Error proofed with IF NOT EXISTS
+    # table_init() # Error proofed with IF NOT EXISTS
 
     rows, columns, exec_time = run_custom_query("SELECT COUNT(*) FROM crime;")
     try:
@@ -31,10 +31,6 @@ def execute_query(query, page, pagination):
     per_page = 30
 
     raw_results, columns, exec_time = run_custom_query(query)
-
-    print(raw_results)
-    print(columns)
-    print(exec_time)
 
     if not pagination:
         return raw_results, columns, exec_time

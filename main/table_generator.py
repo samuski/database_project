@@ -18,7 +18,7 @@ def generate_rel(file_name, pattern, count):
             else:
                 raise ValueError("Unknown pattern")
 
-generate_rel("main/Rel-i-i-1000.csv", "i-i", 1000)
-generate_rel("main/Rel-i-1-1000.csv", "i-1", 1000)
-generate_rel("main/Rel-i-i-1000000.csv", "i-i", 1000000)
-generate_rel("main/Rel-i-1-1000000.csv", "i-1", 1000000)
+# generate_rel("main/Rel-i-i-1000.csv", "i-i", 1000)
+# generate_rel("main/Rel-i-1-1000.csv", "i-1", 1000)
+generate_rel("main/Rel-i-i-1000000.csv", "i-i", 100000)
+generate_rel("main/Rel-i-1-1000000.csv", "i-1", 100000)

@@ -4,8 +4,12 @@ services:
     container_name: hw2_dashboard
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - .:/app
+      - ./main:/app/main
+      - ./dbms:/app/dbms
+    working_dir: /app
     ports:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      - PYTHONPATH=/app:/app/dbms
