@@ -7,217 +7,252 @@ def register_query(func):
     canned_queries[func.__name__] = func
     return func
 
-
-# def execute_query(query):
-#     with connection.cursor() as cursor:
-#         cursor.execute(query)
-#         results = cursor.fetchall()
-#         columns = [col[0] for col in cursor.description]
-#     return results, columns
-
-
-# 1. Monthly Crime Trends in Both Cities
+# TODO We are not actually enforcing not null?
 @register_query
-def monthly_trends():
+def create_table_ref():
     query="""
-        SELECT 
-            l.city,
-            EXTRACT(MONTH FROM t.crimetime) AS month,
-            COUNT(*) AS crime_count
-        FROM crime c
-        JOIN location l ON c.locationid = l.locationid
-        JOIN timeinfo t ON c.timeid = t.timeid
-        GROUP BY l.city, month
-        ORDER BY month, l.city;
+        CREATE TABLE ref_table (
+        id INTEGER PRIMARY KEY AUTO_INCREMENT,
+        name STRING NOT NULL,
+        number INTEGER
+        )
+    """
+    chart_type = "none"
+    return query, chart_type
+
+@register_query
+def create_table_main():
+    query="""
+        CREATE TABLE main_table (
+        id INTEGER PRIMARY KEY AUTO_INCREMENT,
+        name STRING,
+        ref_id INTEGER,
+        FOREIGN KEY (ref_id) REFERENCES ref_table (id)
+        )
+    """
+    chart_type = "none"
+    return query, chart_type
+
+@register_query
+def create_table_people():
+    query="""
+        CREATE TABLE people (
+        id INTEGER AUTO_INCREMENT PRIMARY KEY,
+        user_id STRING,
+        first_name STRING,
+        last_name STRING,
+        sex STRING,
+        email STRING,
+        phone STRING,
+        birthdate STRING,
+        job_title STRING  
+    );
+    """
+    chart_type = "none"
+    return query, chart_type
+
+@register_query
+def create_table_million_i():
+    query="""
+        CREATE TABLE million_i (
+        col1 INTEGER PRIMARY KEY AUTO_INCREMENT,
+        col2 INTEGER
+        )
     """
     chart_type = "bar"
     return query, chart_type
 
-# 2. Most Common Types of Crime by City
 @register_query
-def common_crime():
+def select_all_people():
     query="""
-        SELECT 
-            l.city,
-            cc.categoryname,
-            COUNT(*) AS count_crimes
-        FROM crime c
-        JOIN location l ON c.locationid = l.locationid
-        JOIN crimetype ct ON c.crimetypeid = ct.crimetypeid
-        JOIN crimecategory cc ON ct.categoryid = cc.categoryid
-        GROUP BY l.city, cc.categoryname
-        ORDER BY cc.categoryname, l.city;
+        select * from people
     """
     chart_type = "bar"
     return query, chart_type
 
-# 3. Peak Hours
 @register_query
-def peak_hours():
+def select_all_main():
     query="""
-        SELECT 
-            EXTRACT(HOUR FROM t.crimetime) AS hour,
-            COUNT(*) AS crime_count
-        FROM crime c
-        JOIN timeinfo t ON c.timeid = t.timeid
-        GROUP BY hour
-        ORDER BY hour;
+        select * from main_table
     """
     chart_type = "bar"
     return query, chart_type
 
-# 4. Peak Days
 @register_query
-def peak_days():
+def copy_people():
     query="""
-        SELECT 
-            to_char(t.crimetime, 'Day') AS day_of_week,
-            COUNT(*) AS crime_count
-        FROM crime c
-        JOIN timeinfo t ON c.timeid = t.timeid
-        GROUP BY EXTRACT(DOW FROM t.crimetime), day_of_week
-        ORDER BY EXTRACT(DOW FROM t.crimetime);
+        COPY people FROM 'people_100k.csv'
     """
     chart_type = "bar"
     return query, chart_type
 
-# 5. Geographical Crime Hotspots (Chicago)
 @register_query
-def hotspots_chicago():
+def copy_million_i():
     query="""
-        SELECT 
-            latitude,
-            longitude
-        FROM location
-        WHERE city = 'Chicago'
+        COPY million_i FROM 'million_i.csv'
+    """
+    chart_type = "bar"
+    return query, chart_type
+
+@register_query
+def index_people():
+    query="""
+        CREATE INDEX idx_people ON people (first_name, last_name)
+    """
+    chart_type = "bar"
+    return query, chart_type
+
+@register_query
+def join_main_ref():
+    query="""
+        select * from main_table join ref_table on main_table.ref_id = ref_table.id
+    """
+    chart_type = "bar"
+    return query, chart_type
+@register_query
+def drop_table_ref():
+    query="""
+        DROP TABLE ref_table
+    """
+    chart_type = "bar"
+    return query, chart_type
+
+@register_query
+def drop_table_main():
+    query="""
+        DROP TABLE main_table
+    """
+    chart_type = "bar"
+    return query, chart_type
+
+@register_query
+def drop_table_people():
+    query="""
+        DROP TABLE people
+    """
+    chart_type = "bar"
+    return query, chart_type
+
+@register_query
+def drop_table_million_i():
+    query="""
+        DROP TABLE million_i
+    """
+    chart_type = "bar"
+    return query, chart_type
+
+@register_query
+def query_people0():
+    query="""
+        SELECT job_title, COUNT(*) AS total
+        FROM people
+        WHERE job_title LIKE 'E%'
+        GROUP BY job_title
+        Order by total DESC
+        LIMIT 10
+    """
+    chart_type = "bar"
+    return query, chart_type
+@register_query
+def query_people1():
+    query="""
+        SELECT job_title, COUNT(*) AS total
+        FROM people
+        GROUP BY job_title
+        ORDER BY total DESC
+        HAVING total < 190
+        LIMIT 10
+    """
+    chart_type = "bar"
+    return query, chart_type
+
+@register_query
+def query_people2():
+    query="""
+        SELECT first_name, last_name, birthdate
+        FROM people
+        WHERE birthdate < '1980-01-01'
+        ORDER BY birthdate DESC
+    """
+    chart_type = "bar"
+    return query, chart_type
+
+@register_query
+def query_people3():
+    query="""
+        SELECT sex, COUNT(*) AS total
+        FROM people
+        GROUP BY sex
     """
     chart_type = "heatmap"
     return query, chart_type
 
-# 6. Geographical Crime Hotspots (LA)
 @register_query
-def hotspots_la():
+def query_people4_slow():
     query="""
-        SELECT 
-            latitude,
-            longitude
-        FROM location
-        WHERE city = 'LA'
-        GROUP BY latitude, longitude
+        #SELECT a.first_name AS person1, b.first_name AS person2, a.job_title
+        FROM people AS a
+        JOIN people AS b ON a.job_title = b.job_title
+        WHERE a.id < b.id
+        LIMIT 10
     """
     chart_type = "heatmap"
     return query, chart_type
 
-# 7. Year-over-Year Crime Rate Changes
 @register_query
-def yoy_crime():
+def single_aggregates():
     query="""
-        WITH yearly AS (
-            SELECT 
-              EXTRACT(YEAR FROM t.crimetime) AS year,
-              COUNT(*) AS crime_count
-            FROM crime c
-            JOIN timeinfo t ON c.timeid = t.timeid
-            GROUP BY year
-            ORDER BY year
-          )
-          SELECT 
-              year,
-              crime_count,
-              LAG(crime_count) OVER (ORDER BY year) AS previous_year_count,
-              ROUND(100.0 * (crime_count - LAG(crime_count) OVER (ORDER BY year)) / NULLIF(LAG(crime_count) OVER (ORDER BY year), 0), 2) AS percent_change
-          FROM yearly;
+        SELECT SUM(col1), MIN(col1), MAX(col2), AVG(col1), COUNT(*) from million_i
     """
     chart_type = "bar"
     return query, chart_type
 
-# 8. Crime Distribution (Chicago)
+# TODO The column names are off again.
 @register_query
-def crime_distribution_chicago():
+def lmx1000_join():
     query = """
-        SELECT 
-            ct.crimedesc,
-            COUNT(*) AS crime_count,
-            ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER(), 2) AS crime_percentage
-        FROM crime c
-        JOIN location l ON c.locationid = l.locationid
-        JOIN crimetype ct ON c.crimetypeid = ct.crimetypeid
-        WHERE l.city = 'Chicago'
-        GROUP BY ct.crimedesc
-        ORDER BY crime_count DESC;
+        SELECT *  from million_i as t1 join thousand_i t2 on t1.col1 = t2.col1
     """
     chart_type = "pie"
     return query, chart_type
 
-# 9. Crime Distribution (Los Angeles)
+# TODO We don't support dot inside of aggregates.
 @register_query
-def crime_distribution_la():
+def join_aggregates():
     query = """
-        SELECT 
-            ct.crimedesc,
-            COUNT(*) AS crime_count,
-            ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER(), 2) AS crime_percentage
-        FROM crime c
-        JOIN location l ON c.locationid = l.locationid
-        JOIN crimetype ct ON c.crimetypeid = ct.crimetypeid
-        WHERE l.city = 'LA'
-        GROUP BY ct.crimedesc
-        ORDER BY crime_count DESC;
+        SELECT SUM(t1.col1), MIN(t2.col1), MAX(t1.col2), AVG(t.2col1), COUNT(*) from million_i as t1 join thousand_i t2 on t1.col1 = t2.col1
     """
     chart_type = "pie"
     return query, chart_type
 
-# 10. Seasonal Crime Pattern
 @register_query
-def crime_season():
-    query="""
-        SELECT 
-          season,
-          COUNT(*) AS crime_count
-        FROM (
-          SELECT 
-            CASE 
-              WHEN EXTRACT(MONTH FROM t.crimetime) IN (3,4,5) THEN 'Spring'
-              WHEN EXTRACT(MONTH FROM t.crimetime) IN (6,7,8) THEN 'Summer'
-              WHEN EXTRACT(MONTH FROM t.crimetime) IN (9,10,11) THEN 'Fall'
-              WHEN EXTRACT(MONTH FROM t.crimetime) IN (12,1,2) THEN 'Winter'
-            END AS season
-          FROM crime c
-          JOIN timeinfo t ON c.timeid = t.timeid
-          -- Optionally add a WHERE clause to filter by a specific year or range
-        ) sub
-        GROUP BY season
-        ORDER BY
-          CASE 
-            WHEN season = 'Winter' THEN 1
-            WHEN season = 'Spring' THEN 2
-            WHEN season = 'Summer' THEN 3
-            WHEN season = 'Fall' THEN 4
-          END;
-    """
-    chart_type = "bar"
-    return query, chart_type
-
-# 11. Crime Distribution by Premise Type
-@register_query
-def crime_distribution_premise():
-    query="""
-        SELECT 
-            pt.premisdesc, 
-            COUNT(*) AS crime_count
-        FROM crime c
-        JOIN premisetype pt ON c.premisid = pt.premisid
-        GROUP BY pt.premisdesc
-        ORDER BY crime_count DESC;
+def insert_main():
+    query = """
+        INSERT INTO main_table (name, ref_id) VALUES ("Sam",1)
     """
     chart_type = "pie"
     return query, chart_type
 
-# 12. 
-# @register_query
-# def ():
-#     query="""
+@register_query
+def insert_ref():
+    query = """
+        INSERT INTO ref_table (name, number) VALUES ("DBMS", 1)
+    """
+    chart_type = "pie"
+    return query, chart_type
 
-#     """
-#     chart_type = "bar"
-#     return query, chart_type
+@register_query
+def update_main():
+    query = """
+        UPDATE main_table SET name = "Wisdom" WHERE name = "Sam"
+    """
+    chart_type = "pie"
+    return query, chart_type
+
+@register_query
+def delete_main():
+    query = """
+        DELETE FROM ref_table WHERE number = 1
+    """
+    chart_type = "pie"
+    return query, chart_type

@@ -32,40 +32,62 @@
 <h4>Quick Queries</h4>
 <form method="POST">
     {% csrf_token %}
-    <button name="canned_query" value="monthly_trends" class="btn btn-secondary">
-        Monthly Trends
-    </button>    
-    <button name="canned_query" value="common_crime" class="btn btn-secondary">
-        Most Common Crimes
-    </button>
-    <button name="canned_query" value="peak_hours" class="btn btn-secondary">
-        Peak Crime Hours
-    </button>
-    <button name="canned_query" value="peak_days" class="btn btn-secondary">
-        Peak Crime Days
-    </button>
-    <button name="canned_query" value="hotspots_chicago" class="btn btn-secondary">
-        Crime Hostspots (Chicago)
-    </button>
-    <button name="canned_query" value="hotspots_la" class="btn btn-secondary">
-        Crime Hostspots (Los Angeles)
-    </button>
-    <button name="canned_query" value="yoy_crime" class="btn btn-secondary">
-        Year-over-Year Crime Stats
-    </button>
-    <button name="canned_query" value="crime_distribution_chicago" class="btn btn-secondary">
-        Crime Distribution (Chicago)
-    </button>
-    <button name="canned_query" value="crime_distribution_la" class="btn btn-secondary">
-        Crime Distribution (Los Angeles)
-    </button>
-    <button name="canned_query" value="crime_distribution_premise" class="btn btn-secondary">
-        Crime Distribution by Premise Type
-    </button>
-    <button name="canned_query" value="crime_season" class="btn btn-secondary">
-        Seasonal Crime Pattern
-    </button>
+
+    <h5>Create Tables</h5>
+    <div class="mb-2">
+        <button name="canned_query" value="create_table_ref" class="btn btn-secondary">Create ref_table</button>
+        <button name="canned_query" value="create_table_main" class="btn btn-secondary">Create main_table</button>
+        <button name="canned_query" value="create_table_people" class="btn btn-secondary">Create people table</button>
+        <button name="canned_query" value="create_table_million_i" class="btn btn-secondary">Create million_i table</button>
+    </div>
+
+    <h5>Copy Data</h5>
+    <div class="mb-2">
+        <button name="canned_query" value="copy_people" class="btn btn-secondary">Copy people table</button>
+        <button name="canned_query" value="copy_million_i" class="btn btn-secondary">Copy million_i table</button>
+        <button name="canned_query" value="select_all_people" class="btn btn-secondary">Select all people</button>
+        <button name="canned_query" value="join_main_ref" class="btn btn-secondary">Join main and ref</button>
+    </div>
+
+    <h5>Modify Data</h5>
+    <div class="mb-2">
+        <button name="canned_query" value="select_all_main" class="btn btn-secondary">Select all main</button>
+        <button name="canned_query" value="insert_main" class="btn btn-secondary">Insert main</button>
+        <button name="canned_query" value="insert_ref" class="btn btn-secondary">Insert ref</button>
+        <button name="canned_query" value="update_main" class="btn btn-secondary">Update main</button>
+        <button name="canned_query" value="delete_main" class="btn btn-secondary">Delete ref</button>
+    </div>
+    
+    <h5>Index Tables</h5>
+    <div class="mb-2">
+        <button name="canned_query" value="index_people" class="btn btn-secondary">Create index people</button>
+    </div>
+    
+    <h5>People Queries</h5>
+    <div class="mb-2">
+        <button name="canned_query" value="query_people0" class="btn btn-secondary">Query people0</button>
+        <button name="canned_query" value="query_people1" class="btn btn-secondary">Query people1</button>
+        <button name="canned_query" value="query_people2" class="btn btn-secondary">Query people2</button>
+        <button name="canned_query" value="query_people3" class="btn btn-secondary">Query people3</button>
+        <button name="canned_query" value="query_people4_slow" class="btn btn-secondary">Query people4 slow</button>
+    </div>
+
+    <h5>Aggregates & Joins</h5>
+    <div class="mb-2">
+        <button name="canned_query" value="single_aggregates" class="btn btn-secondary">Single aggregates</button>
+        <button name="canned_query" value="lmx1000_join" class="btn btn-secondary">1m x 1k table join</button>
+        <button name="canned_query" value="join_aggregates" class="btn btn-secondary">Join aggregates</button>
+    </div>
+
+    <h5>Drop Tables</h5>
+    <div>
+        <button name="canned_query" value="drop_table_ref" class="btn btn-secondary">Drop ref_table</button>
+        <button name="canned_query" value="drop_table_main" class="btn btn-secondary">Drop main_table</button>
+        <button name="canned_query" value="drop_table_people" class="btn btn-secondary">Drop people table</button>
+        <button name="canned_query" value="drop_table_million_i" class="btn btn-secondary">Drop million_i</button>
+    </div>
 </form>
+
 
 <!-- Results -->
 {% if results and chart_type != "heatmap"%}

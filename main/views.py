@@ -9,7 +9,7 @@ from django.db import connection
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 # from main.data_files.init_database import table_init
-# from main.canned_queries import canned_queries
+from main.canned_queries import canned_queries
 from main.custom_dbms_adapter import run_custom_query
 
 load_dotenv()
@@ -144,9 +144,9 @@ def dashboard(request):
 
         canned_query = request.POST.get("canned_query", "")
         if canned_query and canned_query in canned_queries:
-            query, chart_type = canned_queries[canned_query]()
-            if chart_type == 'heatmap':
-                pagination = False
+            query, _ = canned_queries[canned_query]()
+            # if chart_type == 'heatmap':
+            #     pagination = False
 
     if query:
         try:
@@ -155,13 +155,13 @@ def dashboard(request):
                 success_message = "Query executed successfully."
             elif isinstance(columns, list) and len(columns) == 1 and columns[0].startswith("Error:"):
                 error_message = columns[0]
-            elif chart_type:
-                if 'city' in [col.lower() for col in columns]: # Checks for 'city' column
-                    graph_data = multi_graph(results, columns)
-                elif chart_type == 'heatmap':
-                    graph_data = heatmap_graph(results)
-                else:
-                    graph_data = graph(results)
+            # elif chart_type:
+            #     if 'city' in [col.lower() for col in columns]: # Checks for 'city' column
+            #         graph_data = multi_graph(results, columns)
+            #     elif chart_type == 'heatmap':
+            #         graph_data = heatmap_graph(results)
+            #     else:
+            #         graph_data = graph(results)
         
             graph_data_json = json.dumps(graph_data, default=lambda o: float(o) if isinstance(o, decimal.Decimal) else o)
 
@@ -178,7 +178,7 @@ def dashboard(request):
         "success_message": success_message,
         "query": query,
         "graph_data" : graph_data_json,
-        "chart_type": chart_type,
+        "chart_type": None,
         "google_maps_api_key": os.getenv("GOOGLE_MAPS_API_KEY"),
         "exec_time": exec_time
     })
